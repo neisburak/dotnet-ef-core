@@ -287,7 +287,7 @@ public class Course
     }
 
     public int Id { get; set; }
-    public string Name { get; set; } = default!;
+    public string Name { get; set; }
 
     public virtual ICollection<Student> Students { get; set; }
 }
@@ -300,7 +300,7 @@ public class Student
     }
 
     public int Id { get; set; }
-    public string Name { get; set; } = default!;
+    public string Name { get; set; }
 
     public virtual ICollection<Course> Courses { get; set; }
 }
@@ -379,24 +379,24 @@ Owned Types allows you to group fields that you do not want to appear as a refer
 ```
 public class User
 {
-    public string FirstName { get; set; } = default!;
-    public string LastName { get; set; } = default!;
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
 }
 
 public class Student
 {
     public int Id { get; set; }
-    public string Class { get; set; } = default!;
-    public string Number { get; set; } = default!;
-    public User User { get; set; } = default!;
+    public string Class { get; set; }
+    public string Number { get; set; }
+    public User User { get; set; }
 }
 
 public class Teacher
 {
     public int Id { get; set; }
-    public string School { get; set; } = default!;
-    public string Branch { get; set; } = default!;
-    public User User { get; set; } = default!;
+    public string School { get; set; }
+    public string Branch { get; set; }
+    public User User { get; set; }
 }
 ```
 
@@ -420,7 +420,7 @@ Keyless entities are entities that do not have a primary key in themselves, so t
 ```
 public class EmployeeCount
 {
-    public string Type { get; set; } = default!;
+    public string Type { get; set; }
     public int Count { get; set; }
 }
 ```
@@ -555,29 +555,6 @@ Tags are query annotations that can provide contextual tracing information at di
 var products = context.Products.TagWith("List of products").ToList();
 ```
 
-### Raw SQL Queries
-EF Core provides `FromSqlRaw` and `FromSqlInterpolated` methods to execute raw SQL queries for the database and get the results as entity objects. When working with `FromSqlRaw` method care should be taken to prevent SQL Injection.
-
-```
-var customers = context.Customers.FromSqlRaw<Customer>("SELECT * FROM Customers").ToList();
-
-var param = new SqlParameter("@id", 1);
-var product = context.Products.FromSqlRaw("SELECT * FROM Products WHERE Id = @id", param).First();
-
-var productId = 1;
-var anotherProduct = context.Products.FromSqlInterpolated($"SELECT * FROM Products WHERE Id = {productId}").First();
-```
-
-#### Views
-ToView / Model / DbSet
-hasnokey performans dostu changetracker
-
-#### Stored Procedures
-fdgh
-
-#### Functions
-gfh
-
 ### Global Query Filters
 Entities can be filtered with `Where`, `FirstOrDefault`, `Single`, etc. methods. In cases where entities have an `IsDeleted` field on them or fields such as `TenantId` in a multi-tenant application, it is appropriate to filter them globally.
 
@@ -595,3 +572,56 @@ Thus, the specified filters will be applied to all queries. This can be disabled
 ```
 var products = context.Products.IgnoreQueryFilters().Where(w => w.UnitPrice > 20).ToList();
 ```
+
+### Raw SQL Queries
+EF Core provides `FromSqlRaw` and `FromSqlInterpolated` methods to execute raw SQL queries for the database and get the results as entity objects. When working with `FromSqlRaw` method care should be taken to prevent SQL Injection.
+
+```
+var customers = context.Customers.FromSqlRaw<Customer>("SELECT * FROM Customers").ToList();
+
+var param = new SqlParameter("@id", 1);
+var product = context.Products.FromSqlRaw("SELECT * FROM Products WHERE Id = @id", param).First();
+
+var productId = 1;
+var anotherProduct = context.Products.FromSqlInterpolated($"SELECT * FROM Products WHERE Id = {productId}").First();
+```
+
+#### Views
+Views are virtual tables based on the result of an SQL statement. They are read-only objects optimized to provide the data.
+
+```
+public class NorthwindDbContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ProductByCategory>().HasNoKey().ToView("ProductByCategory");
+
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public DbSet<ProductByCategory> ProductsByCategories => Set<ProductByCategory>();
+}
+
+public class ProductByCategory
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string CategoryName { get; set; }
+    public decimal UnitPrice { get; set; }
+}
+```
+
+Then the result of the view can be accessed via `ProductsByCategories` property like below. Also you can filter the result, and specified conditions will filter the view. Note that the 'HasNoKey' method is used, which is useful when the View does not return a primary key and it is not desirable to track entities.
+
+```
+var products = context.ProductsByCategories.ToList();
+
+var filteredProducts = context.ProductsByCategories.Where(w => w.UnitPrice < 20).ToList();
+```
+
+#### Stored Procedures
+fdgh
+
+#### Functions
+gfh
+
