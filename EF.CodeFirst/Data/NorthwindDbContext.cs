@@ -8,6 +8,7 @@ namespace EF.CodeFirst.Data;
 
 public class NorthwindDbContext : DbContext
 {
+    private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
     public NorthwindDbContext() { }
     public NorthwindDbContext(DbContextOptions<NorthwindDbContext> options) : base(options) { }
 
@@ -15,7 +16,8 @@ public class NorthwindDbContext : DbContext
     {
         var options = DbContextExtensions.GetOptions("SqlServer");
 
-        if (options.LogEnabled) optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
+        //if (options.LogEnabled) optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
+        if (options.LogEnabled) optionsBuilder.UseLoggerFactory(_loggerFactory);
 
         optionsBuilder.UseLazyLoadingProxies().UseSqlServer(options.ConnectionString);
     }
@@ -24,7 +26,7 @@ public class NorthwindDbContext : DbContext
     {
         // Usage of Fluent API
         modelBuilder.Entity<Product>().Property(p => p.UnitPrice).HasPrecision(18, 2); // Default precision is (18, 2). If you want to use with data annotation: [Precision(18, 2)]
-        // modelBuilder.Entity<Category>().ToTable("CategoryTable", "Products");
+                                                                                       // modelBuilder.Entity<Category>().ToTable("CategoryTable", "Products");
         modelBuilder.Entity<Category>().Property(p => p.Name).HasColumnName("CategoryName");
         modelBuilder.Entity<Category>().Property(p => p.Name).IsRequired();
         modelBuilder.Entity<Category>().Property(p => p.Description).IsRequired(false).HasMaxLength(256);

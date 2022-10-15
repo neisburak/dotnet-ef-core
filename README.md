@@ -1,4 +1,4 @@
-# .NET 6 Entity Framework Core Examples
+# .NET Entity Framework Core 6 Examples
 Entity Framework is an open-source ORM framework for .NET applications supported by Microsoft. There are several approaches in Entity Framework Core; such as database-first, code-first, model-first.
 
 You can run a dotnet app with environment variables like below. It helps when working with a console app if you have environment-dependent files such as `appsettings.json`.
@@ -533,10 +533,27 @@ modelBuilder.Entity<Product>().HasIndex(i => i.Name).IncludeProperties(i => new 
 The first row adds a unique non-clustered index to the Customer's Name column. The second row adds the composite index with the union of the Name and Description columns. The third row adds a non-clustered index with included columns. Also, you can add an index with a data annotation by marking the class with `[Index]` attribute.
 
 ### Query Log
-asdasd
+EF Core logging automatically integrates with the logging mechanisms of .NET Core. `Microsoft.Extensions.Logging.Console` NuGet package must be installed to log SQL and change tracking information.
+
+```
+public class NorthwindDbContext : DbContext
+{
+    private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder..UseLoggerFactory(_loggerFactory).UseSqlServer(connectionString);
+    }
+}
+```
+`LoggerFactory` can have one or more provider. EF Core won't log sensitive data by default, to enable this use `EnableSensitiveDataLogging` method.
 
 ### Query Tags
-asdasd
+Tags are query annotations that can provide contextual tracing information at different points in the query pipeline. `TagWith` method adds a tag to the collection of tags associated with an EF LINQ query.
+
+```
+var products = context.Products.TagWith("List of products").ToList();
+```
 
 ### Raw SQL Queries
 EF Core provides `FromSqlRaw` and `FromSqlInterpolated` methods to execute raw SQL queries for the database and get the results as entity objects. When working with `FromSqlRaw` method care should be taken to prevent SQL Injection.
@@ -562,6 +579,19 @@ fdgh
 gfh
 
 ### Global Query Filters
-Soft Delete (IsDeleted)
-Multi Tenancy (TenantId) with (ctor or di with service)
+Entities can be filtered with `Where`, `FirstOrDefault`, `Single`, etc. methods. In cases where entities have an `IsDeleted` field on them or fields such as `TenantId` in a multi-tenant application, it is appropriate to filter them globally.
 
+```
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Product>().HasQueryFilter(p => p.IsActive && !p.IsDeleted);
+
+    base.OnModelCreating(modelBuilder);
+}
+```
+
+Thus, the specified filters will be applied to all queries. This can be disabled in the corresponding query.
+
+```
+var products = context.Products.IgnoreQueryFilters().Where(w => w.UnitPrice > 20).ToList();
+```

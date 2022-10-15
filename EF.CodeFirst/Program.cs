@@ -41,6 +41,11 @@ QueryDataWithViews(context);
 // Paginate
 PaginateCategories(context, page: 1, pageSize: 10).ForEach(f => Console.WriteLine(f));
 
+// Query Tag
+QueryDataWithTag(context);
+
+// Global Query Filters
+QueryDataWithFilters(context);
 
 async Task Seed(NorthwindDbContext context)
 {
@@ -290,7 +295,16 @@ void QueryDataWithViews(NorthwindDbContext context)
 List<Category> PaginateCategories(NorthwindDbContext context, int page = 0, int pageSize = 10) =>
     context.Categories.OrderBy(o => o.Name).Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-// var products = context.Products.Where(w => w.UnitPrice > 20).ToList();
-// var productss = context.Products.IgnoreQueryFilters().Where(w => w.UnitPrice > 20).ToList();
+void QueryDataWithTag(NorthwindDbContext context)
+{
+    var products = context.Products.TagWith("List of products").ToList();
+    products.ForEach(f => Console.WriteLine(f));
+}
+
+void QueryDataWithFilters(NorthwindDbContext context)
+{
+    var products = context.Products.Where(w => w.UnitPrice > 20).ToList(); // Global query filters will be applied.
+    var productsWithoutFilter = context.Products.IgnoreQueryFilters().Where(w => w.UnitPrice > 20).ToList(); // Global query filters will be ignored.
+}
 
 // var productsss = context.Products.FromSqlRaw("exec SP_GetProducts"); // tüm değerler eşleşmeli
