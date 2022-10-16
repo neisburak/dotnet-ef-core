@@ -1,3 +1,4 @@
+using System.Data.Common;
 using EF.CodeFirst.Entities;
 using EF.CodeFirst.Entities.Functions;
 using EF.CodeFirst.Entities.Views;
@@ -10,7 +11,9 @@ namespace EF.CodeFirst.Data;
 public class NorthwindDbContext : DbContext
 {
     private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    private DbConnection _connection;
     public NorthwindDbContext() { }
+    public NorthwindDbContext(DbConnection connection) { _connection = connection; }
     public NorthwindDbContext(DbContextOptions<NorthwindDbContext> options) : base(options) { }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -20,6 +23,7 @@ public class NorthwindDbContext : DbContext
         //if (options.LogEnabled) optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
         if (options.LogEnabled) optionsBuilder.UseLoggerFactory(_loggerFactory);
 
+        optionsBuilder.UseLazyLoadingProxies().UseSqlServer(_connection);
         optionsBuilder.UseLazyLoadingProxies().UseSqlServer(options.ConnectionString);
     }
 
@@ -55,6 +59,7 @@ public class NorthwindDbContext : DbContext
 
         // Function
         modelBuilder.Entity<SimpleCategory>().HasNoKey().ToFunction("GetCategoriesWithProductCount");
+        modelBuilder.Entity<Feature>().HasNoKey();
         modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetProductFeatures), new[] { typeof(int) })!).HasName("GetProductFeatures");
         modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
 

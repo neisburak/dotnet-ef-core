@@ -54,6 +54,9 @@ QueryDataWithProcedures(context);
 // Functions
 QueryDataWithFunctions(context);
 
+// Transaction
+TransactionExample(context);
+
 
 
 async Task Seed(NorthwindDbContext context)
@@ -354,3 +357,27 @@ void QueryDataWithFunctions(NorthwindDbContext context)
     }).ToList();
     categoriesWithCount.ForEach(f => Console.WriteLine($"{f.Name} has {f.Count} products."));
 }
+
+void TransactionExample(NorthwindDbContext context)
+{
+    using var transaction = context.Database.BeginTransaction();
+    try
+    {
+        var category = new Category { Name = "Clothes" };
+        context.Categories.Add(category);
+        context.SaveChanges();
+
+        var product = new Product { Name = "Jacket", UnitPrice = 24.99m, CategoryId = int.MaxValue };
+        context.Products.Add(product);
+        context.SaveChanges();
+
+        transaction.Commit();
+    }
+    catch (Exception ex)
+    {
+        transaction.Rollback();
+        Console.WriteLine($"Exception: {ex.Message}");
+    }
+}
+
+

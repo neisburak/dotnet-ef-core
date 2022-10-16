@@ -695,11 +695,16 @@ var featuresWithMethod = context.GetProductFeatures(4).ToList();
 EF Core also supports scalar-valued functions too.
 
 ```
-protected override void OnModelCreating(ModelBuilder modelBuilder)
+public class NorthwindDbContext : DbContext
 {
-    modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
 
-    base.OnModelCreating(modelBuilder);
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public int GetCategoriesProductCount(int categoryId) => throw new NotSupportedException("Must be called inside of an LINQ.");
 }
 ```
 
@@ -713,4 +718,92 @@ var categoriesWithCount = context.Categories.Select(s => new
     Count = context.GetCategoriesProductCount(s.Id)
 }).ToList();
 ```
+
+### Transactions
+Since EF Core implements the Unit of Work pattern, it provides a transaction management with the `SaveChanges` method by default. In this way, if an error occurs in the scope, the transaction will have been rollback.
+
+```
+var category = new Category { Name = "Clothes" };
+context.Categories.Add(category);
+
+var product = new Product { Name = "Jacket", UnitPrice = 24.99m, CategoryId = int.MaxValue };
+context.Products.Add(product);
+
+context.SaveChanges();
+```
+
+Both changes will be rolled back, if an error occurs in the example above. In cases where more than one `SaveChanges` method must be used, the transaction scope should be used.
+
+```
+using var transaction = context.Database.BeginTransaction();
+try
+{
+    var category = new Category { Name = "Clothes" };
+    context.Categories.Add(category);
+    context.SaveChanges();
+
+    var product = new Product { Name = "Jacket", UnitPrice = 24.99m, CategoryId = int.MaxValue };
+    context.Products.Add(product);
+    context.SaveChanges();
+
+    transaction.Commit();
+}
+catch (Exception ex)
+{
+    transaction.Rollback();
+}
+```
+
+#### Multiple Instances
+In some cases, there may be situations where it is necessary to work with more than one `DbContext` object instance.
+
+```
+public class NorthwindDbContext : DbContext
+{
+    private DbConnection _connection;
+    
+    public NorthwindDbContext(DbConnection connection) { _connection = connection; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer(_connection);
+    }    
+
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Category> Categories => Set<Category>();
+}
+```
+
+It can be used as in the example below.
+
+```
+var connection = new SqlConnection("connectionString");
+var context = new NorthwindDbContext(connection);
+
+using var transaction = context.Database.BeginTransaction();
+try
+{
+    var category = new Category { Name = "Clothes" };
+    context.Categories.Add(category);
+    context.SaveChanges();
+
+    using var anotherContext = new NorthwindDbContext(connection);
+    anotherContext.Database.UseTransaction(transaction.GetDbTransaction());
+
+    var product = new Product { Name = "Jacket", UnitPrice = 24.99m, CategoryId = int.MaxValue };
+    anotherContext.Products.Add(product);
+    anotherContext.SaveChanges();
+
+    transaction.Commit();
+}
+catch (Exception ex)
+{
+    transaction.Rollback();
+}
+```
+
+### Isolation Levels
+asdsad
+
+### Concurrency
 
