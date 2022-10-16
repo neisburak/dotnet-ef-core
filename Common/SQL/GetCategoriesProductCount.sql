@@ -1,0 +1,5 @@
+CREATE OR ALTER FUNCTION GetCategoriesProductCount(@Id INT)
+RETURNS INT AS
+BEGIN
+RETURN (SELECT COUNT(*) FROM Products p WHERE p.CategoryId = @Id)
+END

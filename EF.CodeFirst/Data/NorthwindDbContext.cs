@@ -1,4 +1,5 @@
 using EF.CodeFirst.Entities;
+using EF.CodeFirst.Entities.Functions;
 using EF.CodeFirst.Entities.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,6 @@ public class NorthwindDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Usage of Fluent API
         modelBuilder.Entity<Product>().Property(p => p.UnitPrice).HasPrecision(18, 2); // Default precision is (18, 2). If you want to use with data annotation: [Precision(18, 2)]
                                                                                        // modelBuilder.Entity<Category>().ToTable("CategoryTable", "Products");
         modelBuilder.Entity<Category>().Property(p => p.Name).HasColumnName("CategoryName");
@@ -45,11 +45,18 @@ public class NorthwindDbContext : DbContext
         modelBuilder.Entity<Category>().HasIndex(i => new { i.Name, i.Description }); // Composed index
         modelBuilder.Entity<Product>().HasIndex(i => i.Name).IsUnique(true).IncludeProperties(i => new { i.UnitPrice, i.CategoryId });
 
-        // modelBuilder.Entity<SimpleProduct>().ToSqlQuery("SELECT p.Id, p.Name, p.UnitPrice, c.Name as CategoryName FROM Products p JOIN Categories c ON p.CategoryId = c.Id");
-        modelBuilder.Entity<ProductByCategory>().HasNoKey().ToView("ProductByCategory");
-
         // Global Query Filters
         modelBuilder.Entity<Product>().HasQueryFilter(p => p.IsActive && !p.IsDeleted);
+
+        // modelBuilder.Entity<SimpleProduct>().ToSqlQuery("SELECT p.Id, p.Name, p.UnitPrice, c.Name as CategoryName FROM Products p JOIN Categories c ON p.CategoryId = c.Id");
+
+        // View
+        modelBuilder.Entity<ProductByCategory>().HasNoKey().ToView("ProductByCategory");
+
+        // Function
+        modelBuilder.Entity<SimpleCategory>().HasNoKey().ToFunction("GetCategoriesWithProductCount");
+        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetProductFeatures), new[] { typeof(int) })!).HasName("GetProductFeatures");
+        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
 
         base.OnModelCreating(modelBuilder);
     }
@@ -82,5 +89,11 @@ public class NorthwindDbContext : DbContext
     public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Student> Students => Set<Student>();
-    public DbSet<ProductByCategory> ProductsByCategories => Set<ProductByCategory>();
+
+    public DbSet<ProductByCategory> ProductsByCategories => Set<ProductByCategory>(); // View
+
+    // Functions
+    public DbSet<SimpleCategory> SimpleCategories => Set<SimpleCategory>();
+    public IQueryable<Feature> GetProductFeatures(int productId) => FromExpression(() => GetProductFeatures(productId));
+    public int GetCategoriesProductCount(int categoryId) => throw new NotSupportedException("Must be called inside of an LINQ.");
 }

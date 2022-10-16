@@ -1,4 +1,5 @@
-﻿using EF.CodeFirst.Data;
+﻿using System.Data;
+using EF.CodeFirst.Data;
 using EF.CodeFirst.Entities;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -35,9 +36,6 @@ QueryDataWithOuterJoin(context);
 // Raw SQL Queries
 QueryDataWithSQLQueries(context);
 
-// Views
-QueryDataWithViews(context);
-
 // Paginate
 PaginateCategories(context, page: 1, pageSize: 10).ForEach(f => Console.WriteLine(f));
 
@@ -46,6 +44,17 @@ QueryDataWithTag(context);
 
 // Global Query Filters
 QueryDataWithFilters(context);
+
+// Views
+QueryDataWithViews(context);
+
+// Stored Procedures
+QueryDataWithProcedures(context);
+
+// Functions
+QueryDataWithFunctions(context);
+
+
 
 async Task Seed(NorthwindDbContext context)
 {
@@ -283,15 +292,6 @@ void QueryDataWithSQLQueries(NorthwindDbContext context)
     var anotherProduct = context.Products.FromSqlInterpolated($"SELECT * FROM Products WHERE Id = {productId}").FirstOrDefault();
 }
 
-void QueryDataWithViews(NorthwindDbContext context)
-{
-    var productsByCategories = context.ProductsByCategories.ToList();
-    productsByCategories.ForEach(f => Console.WriteLine(f));
-
-    var productWhere = context.ProductsByCategories.Where(w => w.UnitPrice < 20).ToList();
-    productWhere.ForEach(f => Console.WriteLine(f));
-}
-
 List<Category> PaginateCategories(NorthwindDbContext context, int page = 0, int pageSize = 10) =>
     context.Categories.OrderBy(o => o.Name).Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
@@ -307,4 +307,50 @@ void QueryDataWithFilters(NorthwindDbContext context)
     var productsWithoutFilter = context.Products.IgnoreQueryFilters().Where(w => w.UnitPrice > 20).ToList(); // Global query filters will be ignored.
 }
 
-// var productsss = context.Products.FromSqlRaw("exec SP_GetProducts"); // tüm değerler eşleşmeli
+void QueryDataWithViews(NorthwindDbContext context)
+{
+    var productsByCategories = context.ProductsByCategories.ToList();
+    productsByCategories.ForEach(f => Console.WriteLine(f));
+
+    var productWhere = context.ProductsByCategories.Where(w => w.UnitPrice < 20).ToList();
+    productWhere.ForEach(f => Console.WriteLine(f));
+}
+
+void QueryDataWithProcedures(NorthwindDbContext context)
+{
+    // All returned fields must match with the DbSet<Entity>
+
+    var category = context.Categories.FirstOrDefault();
+    if (category is not null)
+    {
+        var param = new SqlParameter("@CategoryId", category.Id);
+        var productsByCategory = context.Products.FromSqlRaw("EXEC GetProductsByCategory @CategoryId", param).IgnoreQueryFilters().ToList();
+    }
+
+    if (!context.Categories.Any(a => a.Name == "Phones"))
+    {
+        var categoryToAdd = new Category { Name = "Phones", Description = "Lorem ipsum dolor sit amet." };
+        var outParam = new SqlParameter("@Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
+        var result = context.Database.ExecuteSqlInterpolated($"EXEC InsertCategory {categoryToAdd.Name}, {categoryToAdd.Description}, {outParam} OUT");
+        Console.WriteLine($"Category added with stored procedure. Result: {result}, Id: {outParam.Value}");
+    }
+}
+
+void QueryDataWithFunctions(NorthwindDbContext context)
+{
+    // Table Valued Functions
+    var categories = context.SimpleCategories.ToList();
+    categories.ForEach(f => Console.WriteLine(f));
+
+    var featuresWithMethod = context.GetProductFeatures(4).ToList();
+    Console.WriteLine($"Product has {featuresWithMethod.Count} features.");
+
+    // Scalar Valued Functions
+    var categoriesWithCount = context.Categories.Select(s => new
+    {
+        Id = s.Id,
+        Name = s.Name,
+        Count = context.GetCategoriesProductCount(s.Id)
+    }).ToList();
+    categoriesWithCount.ForEach(f => Console.WriteLine($"{f.Name} has {f.Count} products."));
+}

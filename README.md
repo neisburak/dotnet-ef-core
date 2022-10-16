@@ -20,7 +20,7 @@ public class NorthwindContext : DbContext
 } 
 ```
 
-It has `Add`, `Update`, `Remove`, `Find` and `SaveChanges` methods. There are also several `DbContext` properties too.
+ The `OnConfiguring` method is called every time that an instance of the context is created. It has `Add`, `Update`, `Remove`, `Find` and `SaveChanges` methods. There are also several `DbContext` properties too.
 
 | Property | Description
 | ----------- | ----------- |
@@ -611,7 +611,7 @@ public class ProductByCategory
 }
 ```
 
-Then the result of the view can be accessed via `ProductsByCategories` property like below. Also you can filter the result, and specified conditions will filter the view. Note that the 'HasNoKey' method is used, which is useful when the View does not return a primary key and it is not desirable to track entities.
+`HasNoKey` method is used, which is useful when the View does not return a primary key and it is not desirable to track entities. The result of the `ProductByCategory` view can be accessed via `ProductsByCategories` property like below. Also you can filter the result, and specified conditions will filter the view.
 
 ```
 var products = context.ProductsByCategories.ToList();
@@ -619,9 +619,98 @@ var products = context.ProductsByCategories.ToList();
 var filteredProducts = context.ProductsByCategories.Where(w => w.UnitPrice < 20).ToList();
 ```
 
+Creating a view with migration is a best practice; to implement this, create a blank migration with an appropriate name and fill it as follows.
+
+```
+public partial class CreateProductByCategoryView : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.Sql("CREATE OR ALTER VIEW NAME AS SELECT ...");
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.Sql("DROP VIEW NAME");
+    }
+}
+```
+
 #### Stored Procedures
-fdgh
+Stored procedures are prepared SQL code that you can save, so the code can be reused over and over again.
+
+```
+var products = context.Products.FromSqlRaw("EXEC GetProducts").ToList();
+
+var param = new SqlParameter("@id", categoryId);
+var productsByCategory = context.Products.FromSqlRaw("EXEC GetProductsByCategory @id", param).IgnoreQueryFilters().ToList();
+```
+
+All the fields returned from the procedure must match with the `DbSet<Entity>`. If global query filters applied over the entity `IgnoreQueryFilters` method must be called after `FromSqlRaw` or `FromSqlInterpolated` method.
+
+```
+var category = new Category { Name = "Phones" };
+
+var param = new SqlParameter("@Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
+
+var result = context.Database.ExecuteSqlInterpolated($"EXEC InsertCategory {category.Name}, {category.Description}, {param} OUT");
+```
+ A record could also be inserted with a stored procedure too.
 
 #### Functions
-gfh
+Functions are code snippets that can perform a specific task. SQL Server supports `Table-Valued` and `Scalar-Valued` functions. 
+
+```
+public class NorthwindDbContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SimpleCategory>().HasNoKey().ToFunction("GetCategoriesWithProductCount");
+
+        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetProductFeatures), new[] { typeof(int) })!).HasName("GetProductFeatures");
+
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public DbSet<SimpleCategory> SimpleCategories => Set<SimpleCategory>();
+    public IQueryable<Feature> GetProductFeatures(int productId) => FromExpression(() => GetProductFeatures(productId));
+}
+
+public class SimpleCategory
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = default!;
+    public int ProductCount { get; set; }
+}
+```
+
+After the required configuration is done, table-valued functions can be called like below.
+
+```
+var categories = context.SimpleCategories.ToList();
+
+var featuresWithMethod = context.GetProductFeatures(4).ToList();
+```
+
+EF Core also supports scalar-valued functions too.
+
+```
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
+
+    base.OnModelCreating(modelBuilder);
+}
+```
+
+Scalar-Valued functions must be called in a LINQ statement like below.
+
+```
+var categoriesWithCount = context.Categories.Select(s => new
+{
+    Id = s.Id,
+    Name = s.Name,
+    Count = context.GetCategoriesProductCount(s.Id)
+}).ToList();
+```
 
