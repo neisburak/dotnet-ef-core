@@ -57,6 +57,9 @@ QueryDataWithFunctions(context);
 // Transaction
 TransactionExample(context);
 
+// Isolation Levels
+IsolationLevelExample(context);
+
 
 
 async Task Seed(NorthwindDbContext context)
@@ -380,4 +383,7 @@ void TransactionExample(NorthwindDbContext context)
     }
 }
 
+void IsolationLevelExample(NorthwindDbContext context)
+{
 
+}

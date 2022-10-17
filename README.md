@@ -803,7 +803,28 @@ catch (Exception ex)
 ```
 
 ### Isolation Levels
-asdsad
+Isolation levels are used to specify how transactions running simultaneously should affect each other. Considering two simultaneous transactions, there are three possible situations: Phantom Read, Non-Repeatable Read and Dirty Read.
 
-### Concurrency
+#### Phantom Read
+A phantom read occurs when a transaction reads rows, and another transaction inserts or deletes rows to the records being read. When the transaction that reads the data reads again, new phantom rows will be found.
+
+#### Non-Repeatable Read
+A nonrepeatable read occurs when a transaction reads the same row twice but gets different data each time.
+
+#### Dirty Read
+A dirty read occurs when a transaction reads data that has not yet been committed.
+
+Problems that may occur in transactions like these are solved with the help of Isolation Level.  The default value of the Isolation Level is ReadCommitted.
+
+| Isolation Level | Description
+| --------------- | -----------
+| ReadUncommitted | As the name implies a transaction can read the data from another uncommitted transaction.
+| ReadCommitted | A transaction cannot read data until another transaction is committed.
+| RepeatableRead | A transaction 
+| Serializable | Transactions are serialized and executed sequentially, which can avoid dirty read, non-repeatable read, and phantom read.
+
+
+
+
+
 
