@@ -1,4 +1,4 @@
-namespace EF.IsolationLevels.Entities;
+namespace EF.Concurrency.Entities;
 
 public class Category
 {

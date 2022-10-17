@@ -1,5 +1,5 @@
-using EF.CodeFirst.Data;
-using EF.CodeFirst.Entities;
+using EF.IsolationLevels.Data;
+using EF.IsolationLevels.Entities;
 
 namespace EF.IsolationLevels.Services;
 
@@ -13,8 +13,8 @@ public class UtilityService
 
         var categories = new List<Category>
         {
-            new() { Name = "Books", Description = "Lorem ipsum dolor sit amet." },
-            new() { Name = "Computers", Description = "Lorem ipsum dolor sit amet." },
+            new() { Name = "Books" },
+            new() { Name = "Computers" },
         };
         var products = new List<Product>
         {

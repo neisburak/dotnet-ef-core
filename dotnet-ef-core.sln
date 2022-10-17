@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EF.Inheritance", "EF.Inheri
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EF.IsolationLevels", "EF.IsolationLevels\EF.IsolationLevels.csproj", "{3C176817-D3D3-4C9E-AF78-B831419EAA49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EF.Concurrency", "EF.Concurrency\EF.Concurrency.csproj", "{D567587F-9EF7-490A-8FE5-5837BAE25798}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{3C176817-D3D3-4C9E-AF78-B831419EAA49}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C176817-D3D3-4C9E-AF78-B831419EAA49}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C176817-D3D3-4C9E-AF78-B831419EAA49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D567587F-9EF7-490A-8FE5-5837BAE25798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D567587F-9EF7-490A-8FE5-5837BAE25798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D567587F-9EF7-490A-8FE5-5837BAE25798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D567587F-9EF7-490A-8FE5-5837BAE25798}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{546D55BC-97D5-4333-9596-73EBEB06AAE0} = {C241AC57-282E-45E3-863D-861494B5582D}

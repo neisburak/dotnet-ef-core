@@ -1,8 +1,8 @@
-using EF.CodeFirst.Entities;
+using EF.IsolationLevels.Entities;
 using Microsoft.EntityFrameworkCore;
 using Utilities.Extensions;
 
-namespace EF.CodeFirst.Data;
+namespace EF.IsolationLevels.Data;
 
 public class DataContext : DbContext
 {

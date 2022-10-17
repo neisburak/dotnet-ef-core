@@ -832,7 +832,84 @@ In the following table shows the problems they can solve.
 | RepeatableRead | &check; | &check; | &cross;
 | Serializable | &check; | &check; | &check;
 
+### Concurrency
+Concurrency conflicts occur when one user retrieves an entity's data in order to modify it, and then another user updates the same entity's data before the first user's changes are written to the database. If you don't enable the detection of such conflicts, whoever updates the database last overwrites the other user's changes.
 
+#### Pessimistic Concurrency (locking)
+Pessimistic concurrency involves locking database records to prevent other users being able to access/change them until the lock is released, much like when two users attempt to open the same file on a network share.
 
+#### Optimistic Concurrency
+Optimistic concurrency assumes that the update being made will be accepted, but prior to the change being made in the database, the original values of the record are compared to the existing row in the database and if any changes are detected, a concurrency exception is raised. This is useful in situations where allowing one user's changes to overwrite another's could lead to data loss.
 
+Entity Framework Core provides support for optimistic concurrency management with two approaches.
 
+#### Concurrency Tokens
+Properties can be configured as concurrency tokens. Alternatively, properties can be decorated with `ConcurrencyCheck` data annotation attribute.
+
+```
+public class DataContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>().Property(p => p.Name).IsConcurrencyToken();
+
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public DbSet<Product> Products => Set<Product>();
+}
+
+{
+    public int Id { get; set; }
+    public int CategoryId { get; set; }
+    public string Name { get; set; }
+}
+```
+
+Any existing properties that have been configured as concurrency tokens will be included with their original values in the `WHERE` clause of an `UPDATE` or `DELETE` statement.
+
+#### RowVersion Property
+In the `RowVersion` property, a new column is added to the database table and it stores the version stamp of the data. A new Row version value is added each time a user updates the data. Alternatively, `RowVersion` property can be decorated with `Timestamp` data annotation attribute.
+
+```
+public class DataContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>().Property(p => p.RowVersion).IsRowVersion();
+
+        base.OnModelCreating(modelBuilder);
+    }
+
+    public DbSet<Product> Products => Set<Product>();
+}
+
+{
+    public int Id { get; set; }
+    public int CategoryId { get; set; }
+    public string Name { get; set; }
+    public byte[] RowVersion { get; set; }
+}
+```
+
+To resolve the concurrency conflicts in Entity Framework Core, the system traces 3 main values to determine where the problem is coming from:
+
+- **Current values:** Current values that were last updated into the database by the user.
+- **Original Values:** Values that was present in the database initially, before concurrency occurred.
+- **Database Values:** Values that are currently stored in the database.
+
+```
+try
+{
+    using var context = new DataContext();
+    context.Products.Update(product);
+    context.SaveChanges();
+}
+catch (DbUpdateConcurrencyException ex)
+{
+    // Concurrency exception occurred.
+
+    var currentValues = entry.CurrentValues;
+    var databaseValues = entry.GetDatabaseValues();
+}
+```

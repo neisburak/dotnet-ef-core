@@ -1,6 +1,6 @@
 using System.Data;
-using EF.CodeFirst.Data;
-using EF.CodeFirst.Entities;
+using EF.IsolationLevels.Data;
+using EF.IsolationLevels.Entities;
 using EF.IsolationLevels.Models;
 using Microsoft.EntityFrameworkCore;
 
