@@ -892,7 +892,7 @@ public class DataContext : DbContext
 }
 ```
 
-To resolve the concurrency conflicts in Entity Framework Core, the system traces 3 main values to determine where the problem is coming from:
+To resolve the concurrency conflicts in Entity Framework Core, traces a few values to determine where the problem is coming from:
 
 - **Current values:** Current values that were last updated into the database by the user.
 - **Original Values:** Values that was present in the database initially, before concurrency occurred.
