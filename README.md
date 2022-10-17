@@ -814,7 +814,7 @@ A nonrepeatable read occurs when a transaction reads the same row twice but gets
 #### Dirty Read
 A dirty read occurs when a transaction reads data that has not yet been committed.
 
-Problems that may occur in transactions like these are solved with the help of Isolation Level.  The default value of the Isolation Level is ReadCommitted.
+Problems that may occur in transactions like these are solved with the help of Isolation Level.  The default value of the Isolation Level is `ReadCommitted`.
 
 | Isolation Level | Description
 | --------------- | -----------
@@ -823,6 +823,14 @@ Problems that may occur in transactions like these are solved with the help of I
 | RepeatableRead | A transaction 
 | Serializable | Transactions are serialized and executed sequentially, which can avoid dirty read, non-repeatable read, and phantom read.
 
+In the following table shows the problems they can solve.
+
+| Isolation Level | Dirty Read | Nonrepeatable Read | Phantom
+| --------------- | :--------: | :----------------: | :-----:
+| ReadUncommitted | &cross; | &cross; | &cross;
+| ReadCommitted | &check; | &cross; | &cross;
+| RepeatableRead | &check; | &check; | &cross;
+| Serializable | &check; | &check; | &check;
 
 
 

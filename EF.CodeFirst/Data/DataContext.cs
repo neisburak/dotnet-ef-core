@@ -8,11 +8,11 @@ using Utilities.Extensions;
 
 namespace EF.CodeFirst.Data;
 
-public class NorthwindDbContext : DbContext
+public class DataContext : DbContext
 {
     private static readonly ILoggerFactory _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-    public NorthwindDbContext() { }
-    public NorthwindDbContext(DbContextOptions<NorthwindDbContext> options) : base(options) { }
+    public DataContext() { }
+    public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -57,8 +57,8 @@ public class NorthwindDbContext : DbContext
         // Function
         modelBuilder.Entity<SimpleCategory>().HasNoKey().ToFunction("GetCategoriesWithProductCount");
         modelBuilder.Entity<Feature>().HasNoKey();
-        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetProductFeatures), new[] { typeof(int) })!).HasName("GetProductFeatures");
-        modelBuilder.HasDbFunction(typeof(NorthwindDbContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
+        modelBuilder.HasDbFunction(typeof(DataContext).GetMethod(nameof(GetProductFeatures), new[] { typeof(int) })!).HasName("GetProductFeatures");
+        modelBuilder.HasDbFunction(typeof(DataContext).GetMethod(nameof(GetCategoriesProductCount), new[] { typeof(int) })!).HasName("GetCategoriesProductCount");
 
         base.OnModelCreating(modelBuilder);
     }
